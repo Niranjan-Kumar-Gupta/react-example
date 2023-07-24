@@ -1,0 +1,145 @@
+import React, { useContext, useState } from "react";
+
+import {
+  arrayUnion,
+  doc,
+  serverTimestamp,
+  Timestamp,
+  updateDoc,
+} from "firebase/firestore";
+import { db, storage } from "../../firebase";
+import { v4 as uuid } from "uuid";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { useSelector } from "react-redux";
+import axiosInstance from "../../api/axios.instance";
+import { useEffect } from "react";
+
+
+const Input = () => {
+  const [text, setText] = useState("");
+  const [img, setImg] = useState(null);
+  const [imgData, setImgData] = useState(null);
+
+  const { allotedAgent, chatId, user } = useSelector((state) => state.enqChats);
+
+  useEffect(()=>{
+    console.log(img)
+   if (img) {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      setImgData(reader.result);
+    });
+    reader.readAsDataURL(img);
+   }else{
+    setImgData(null);
+   }
+  },[img])
+
+
+  const handleSend = async () => {
+     if (img) {
+      //  console.log(img)
+      //  try {     
+      //       const resp = await axiosInstance.post('/image', {
+
+      //       });
+      //       console.log(resp)
+           
+      //       setImg(null);
+      //       return resp.data;
+      //   } catch (err) {
+      //       console.log(err)
+      //       throw err
+      //   }
+      //  const storageRef = ref(storage, uuid());
+      //  const uploadTask = uploadBytesResumable(storageRef, img);
+    
+
+    //   uploadTask.on(
+    //     (error) => {
+    //       //TODO:Handle Error
+    //     },
+    //     () => {
+    //       getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+    //         await updateDoc(doc(db, "chats", chatId), {
+    //           messages: arrayUnion({
+    //             id: uuid(),
+    //             text,
+    //             senderId: allotedAgent.uid,
+    //             date: Timestamp.now(),
+    //             img: downloadURL,
+    //           }),
+    //         });
+    //       });
+    //     }
+    //   );
+     }
+     else {
+      console.log(text)
+      const data = {
+        destinationNo:user?.mob,
+        payload:{
+          type:"text",
+          text:text
+        }
+       }
+      //  await updateDoc(doc(db, "chats", chatId), {
+      //   messages: arrayUnion({
+      //     id: uuid(),
+      //     text,
+      //     senderId: allotedAgent.uid,
+      //     date: Timestamp.now(),
+      //   }),
+      // });
+          try {
+            
+            const resp = await axiosInstance.post('/user/sendMessage', data);
+            console.log(resp)
+            setText("");
+            setImg(null);
+            return resp.data;
+        } catch (err) {
+            console.log(err)
+            throw err
+        }
+    
+     }
+
+    // await updateDoc(doc(db, "groups", allotedAgent.mob + "-" + user.mob), {
+    //   [chatId + ".lastMessage"]: {
+    //     text,
+    //   },
+    //   [chatId + ".date"]: serverTimestamp(),
+    // });
+    setText("");
+    setImg(null);
+    
+  };
+  return (
+    <div className="input">
+      <input
+        type="text"
+        placeholder="Type something..."
+        onChange={(e) => setText(e.target.value)}
+        value={text}
+      />
+      <div className="send">
+        <input
+          type="file"
+          style={{ display: "none" }}
+          id="file"
+          onChange={(e) => setImg(e.target.files[0])}
+        />
+        <label htmlFor="file" className="cursor-pointer flex align-items-center gap-1">
+          <img className="__img" src={imgData} alt="" />
+          <i className="pi pi-paperclip" />
+        </label>
+        <button onClick={handleSend} >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Input;
